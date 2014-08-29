@@ -84,10 +84,58 @@ exports.parse = function(data, offset, state)
 	return offset
 }
 
+var javascriptTypeToRespType =
+{
+	Buffer : respTypes.BulkString,
+	number : respTypes.Integer,
+	default : respTypes.SimpleString,
+}
+
 exports.encode = function(value)
 {
-	var prefix = (typeof(value) == "number") ? respTypes.Integer : respTypes.SimpleString
+	var valueType = typeof(value)
+	var returnValue
 
-	return new Buffer(prefix + value + '\r\n')
+	if (valueType == "object")
+	{
+		if (value instanceof Buffer)
+		{
+			valueType = "Buffer"
+		}
+	}
+
+	var prefix = javascriptTypeToRespType[valueType] || javascriptTypeToRespType["default"]
+
+	switch (prefix)
+	{
+		case respTypes.BulkString:
+			var lengthString = value.length.toString()
+			var crlf = '\r\n'
+			var offset = 0
+
+			returnValue = new Buffer(respTypes.BulkString.length + lengthString.length + crlf.length + value.length + crlf.length)
+
+			returnValue.write(respTypes.BulkString, offset)
+			offset += respTypes.BulkString.length
+
+			returnValue.write(lengthString, offset)
+			offset += lengthString.length
+
+			returnValue.write(crlf, offset)
+			offset += crlf.length
+
+			value.copy(returnValue, offset)
+			offset += value.length
+
+			returnValue.write(crlf, offset)
+			offset += crlf.length
+			break;
+
+		default:
+			returnValue = new Buffer(prefix + value + '\r\n')
+			break;
+	}
+
+	return returnValue
 }
 
