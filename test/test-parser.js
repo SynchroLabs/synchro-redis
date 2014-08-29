@@ -4,7 +4,8 @@ var assert = require('assert')
 
 function respParse(data, offset, state)
 {
-	switch (data[offset])
+	dataType = data[offset]
+	switch (dataType)
 	{
 		case '$':
 			// Bulk string
@@ -42,6 +43,13 @@ function respParse(data, offset, state)
 			end = data.indexOf('\n', offset)
 			state.completeType = data.substring(1 + offset, end - 1)
 			offset = end + 1
+
+			// Fix the type if it's a number
+
+			if (dataType == ':')
+			{
+				state.completeType = parseInt(state.completeType)
+			}
 			break;
 	}
 	return offset
@@ -77,8 +85,14 @@ describe('RESP parser', function() {
 
 	it('should parse errors')
 
-	it('should parse integers', function() {
-		assert.equal(parseFromString(":1234\r\n"), 1234)
+	describe('integer handling', function() {
+		it('should parse integers', function() {
+			assert.equal(parseFromString(":1234\r\n"), 1234)
+		})
+
+		it('should make integers Javascript Numbers', function() {
+			assert.equal(typeof(parseFromString(":1234\r\n")), "number")
+		})
 	})
 
 	describe('bulk string handling', function() {
