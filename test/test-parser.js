@@ -43,8 +43,8 @@ function respParse(data, offset, state)
 			// Now grab the string
 			if (len > -1)
 			{
-				var end = bufferIndexOf(data, '\n', offset)
-				state.completeType = data.toString('utf8', offset, end - 1)
+				var end = offset + len + 1
+				state.completeType = data.slice(offset, end - 1)
 				offset = end + 1
 			}
 			else
@@ -164,6 +164,22 @@ describe('RESP parser', function() {
 
 		it('should parse null bulk strings', function() {
 			assert.equal(parseFromString("$-1\r\n"), null)
+		})
+
+		it('should parse binary data bulk strings', function() {
+			var binaryData = new Buffer(256)
+			var finalBuffer = new Buffer(6 + 256 + 2)	// $256\r\n<256 bytes of data>\r\n
+
+			for (var counter = 0;counter < binaryData.length;++counter)
+			{
+				binaryData[counter] = counter
+			}
+
+			finalBuffer.write("$256\r\n")
+			binaryData.copy(finalBuffer, 6)
+			finalBuffer.write("\r\n", 6 + 256)
+
+			assert.deepEqual(parseFromBuffer(finalBuffer), binaryData)
 		})
 	})
 
