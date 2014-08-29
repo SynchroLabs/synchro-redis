@@ -2,8 +2,23 @@ var assert = require('assert')
 
 // http://redis.io/topics/protocol
 
+function respParse(data, state)
+{
+	state.completeType = data.substring(1, data.length - 2)
+}
+
 describe('RESP parser', function() {
-	it('should exist')
+	function parseFromString(data)
+	{
+		returnValue = {}
+		respParse(data, returnValue)
+		assert(returnValue.completeType)
+		return returnValue.completeType
+	}
+
+	it('should exist', function() {
+		assert(respParse)
+	})
 
 	it('should accept data from a Buffer')
 
@@ -13,7 +28,9 @@ describe('RESP parser', function() {
 
 	it('should indicate if there is data remaining to be processed')
 
-	it('should parse simple strings')
+	it('should parse simple strings', function() {
+		assert.equal(parseFromString("+a\r\n"), "a")
+	})
 
 	it('should parse errors')
 
