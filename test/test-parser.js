@@ -2,21 +2,39 @@ var assert = require('assert')
 
 // http://redis.io/topics/protocol
 
+function bufferIndexOf(buffer, value, offset)
+{
+	var value = value.charCodeAt(0)
+	var returnValue = -1
+
+	for (;offset < buffer.length;++offset)
+	{
+		if (buffer[offset] == value)
+		{
+			returnValue = offset
+			break
+		}
+	}
+
+	return returnValue
+}
+
 function respParse(data, offset, state)
 {
-	dataType = data[offset]
+	var dataType = data.toString('utf8', offset, offset + 1)
+
 	switch (dataType)
 	{
 		case '$':
 			// Bulk string
 			// Figure out the length
-			len = parseInt(data.substring(1 + offset, data.indexOf('\r', offset)))
-			offset = data.indexOf('\n', offset) + 1
+			var len = parseInt(data.toString('utf8', 1 + offset, bufferIndexOf(data, '\r', offset)))
+			var offset = bufferIndexOf(data, '\n', offset) + 1
 			// Now grab the string
 			if (len > -1)
 			{
-				end = data.indexOf('\n', offset)
-				state.completeType = data.substring(offset, end - 1)
+				var end = bufferIndexOf(data, '\n', offset)
+				state.completeType = data.toString('utf8', offset, end - 1)
 				offset = end + 1
 			}
 			else
@@ -28,20 +46,20 @@ function respParse(data, offset, state)
 		case '*':
 			// Array
 			// Figure out the length
-			len = parseInt(data.substring(1 + offset, data.indexOf('\r', offset)))
+			var len = parseInt(data.toString('utf8', 1 + offset, bufferIndexOf(data, '\r', offset)))
 			state.completeType = (len == -1) ? null : []
-			offset = data.indexOf('\n', offset) + 1
+			var offset = bufferIndexOf(data, '\n', offset) + 1
 			for (counter = 0;counter < len;++counter)
 			{
-				newElement = {}
+				var newElement = {}
 				offset = respParse(data, offset, newElement)
 				state.completeType[counter] = newElement.completeType
 			}
 			break;
 
 		default:
-			end = data.indexOf('\n', offset)
-			state.completeType = data.substring(1 + offset, end - 1)
+			var end = bufferIndexOf(data, '\n', offset)
+			state.completeType = data.toString('utf8', 1 + offset, end - 1)
 			offset = end + 1
 
 			// Fix the type if it's a number
@@ -52,17 +70,23 @@ function respParse(data, offset, state)
 			}
 			break;
 	}
+
 	return offset
 }
 
 describe('RESP parser', function() {
-	function parseFromString(data)
+	function parseFromBuffer(data)
 	{
-		returnValue = {}
-		offset = respParse(data, 0, returnValue)
+		var returnValue = {}
+		var offset = respParse(data, 0, returnValue)
 		assert('completeType' in returnValue)
 		assert.equal(offset, data.length)
 		return returnValue.completeType
+	}
+
+	function parseFromString(data)
+	{
+		return parseFromBuffer(new Buffer(data))
 	}
 
 	it('should exist', function() {
