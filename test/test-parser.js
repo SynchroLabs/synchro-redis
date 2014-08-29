@@ -101,7 +101,24 @@ describe('RESP parser', function() {
 
 	it('should indicate when a type has been completely received')
 
-	it('should indicate if there is data remaining to be processed')
+	it('should indicate if there is data remaining to be processed', function() {
+		var data = new Buffer("+a\r\n+b\r\n")
+		var returnValue = {}
+
+		// There are two string objects in the buffer, at offset 0 and
+		// offset 4
+
+		// First one is offset 0, return value is offset 4
+
+		assert.equal(respParse(data, 0, returnValue), 4)
+		assert.equal(returnValue.completeType, "a")
+
+		// Second one is offset 4, return value is offset 8
+
+		returnValue = {}
+		assert.equal(respParse(data, 4, returnValue), 8)
+		assert.equal(returnValue.completeType, "b")
+	})
 
 	it('should parse simple strings', function() {
 		assert.equal(parseFromString("+a\r\n"), "a")
