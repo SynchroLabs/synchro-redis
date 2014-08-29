@@ -29,7 +29,7 @@ function respParse(data, offset, state)
 			// Bulk string
 			// Figure out the length
 			var len = parseInt(data.toString('utf8', 1 + offset, bufferIndexOf(data, '\r', offset)))
-			var offset = bufferIndexOf(data, '\n', offset) + 1
+			offset = bufferIndexOf(data, '\n', offset) + 1
 			// Now grab the string
 			if (len > -1)
 			{
@@ -48,7 +48,7 @@ function respParse(data, offset, state)
 			// Figure out the length
 			var len = parseInt(data.toString('utf8', 1 + offset, bufferIndexOf(data, '\r', offset)))
 			state.completeType = (len == -1) ? null : []
-			var offset = bufferIndexOf(data, '\n', offset) + 1
+			offset = bufferIndexOf(data, '\n', offset) + 1
 			for (counter = 0;counter < len;++counter)
 			{
 				var newElement = {}
