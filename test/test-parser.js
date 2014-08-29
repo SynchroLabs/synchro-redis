@@ -30,14 +30,11 @@ function respParse(data, offset, state)
 			len = parseInt(data.substring(1 + offset, data.indexOf('\r', offset)))
 			state.completeType = (len == -1) ? null : []
 			offset = data.indexOf('\n', offset) + 1
-			if (len > 0)
+			for (counter = 0;counter < len;++counter)
 			{
-				for (counter = 0;counter < len;++counter)
-				{
-					newElement = {}
-					offset = respParse(data, offset, newElement)
-					state.completeType[counter] = newElement.completeType
-				}
+				newElement = {}
+				offset = respParse(data, offset, newElement)
+				state.completeType[counter] = newElement.completeType
 			}
 			break;
 
