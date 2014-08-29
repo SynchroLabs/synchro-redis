@@ -2,9 +2,15 @@ var assert = require('assert')
 var resp = require('../resp')
 
 describe('RESP generator', function() {
-	it('should exist')
-	it('should generate simple strings')
-	it('should generate integers')
+	it('should exist', function() {
+		assert(resp.encode)
+	})
+	it('should generate simple strings', function() {
+		assert.equal(resp.encode('a'), "+a\r\n")
+	})
+	it('should generate integers', function() {
+		assert.equal(resp.encode(1234), ":1234\r\n")
+	})
 	it('should generate bulk strings')
 	it('should generate arrays')
 	describe('automatic type selection', function() {
