@@ -1,5 +1,3 @@
-var assert = require('assert')
-
 // http://redis.io/topics/protocol
 
 var respTypes = {
