@@ -4,7 +4,20 @@ var assert = require('assert')
 
 function respParse(data, state)
 {
-	state.completeType = data.substring(1, data.length - 2)
+	switch (data[0])
+	{
+		case '$':
+			// Bulk string
+			// Figure out the length
+			len = parseInt(data.substring(1, data.indexOf('\r')))
+			// Now grab the string
+			state.completeType = data.substring(data.indexOf('\n') + 1, data.indexOf('\n') + 1 + len)
+			break;
+
+		default:
+			state.completeType = data.substring(1, data.length - 2)
+			break;
+	}
 }
 
 describe('RESP parser', function() {
@@ -12,7 +25,7 @@ describe('RESP parser', function() {
 	{
 		returnValue = {}
 		respParse(data, returnValue)
-		assert(returnValue.completeType)
+		assert('completeType' in returnValue)
 		return returnValue.completeType
 	}
 
@@ -41,10 +54,13 @@ describe('RESP parser', function() {
 	})
 
 	describe('bulk string handling', function() {
-		it('should parse bulk strings')
+		it('should parse bulk strings', function() {
+			assert.equal(parseFromString("$1\r\na\r\n"), "a")
+		})
 
-		it('should parse empty bulk strings')
-
+		it('should parse empty bulk strings', function() {
+			assert.equal(parseFromString("$0\r\n\r\n"), "")
+		})
 		it('should parse null bulk strings')
 	})
 
