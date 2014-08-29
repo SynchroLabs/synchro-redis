@@ -2,37 +2,61 @@ var assert = require('assert')
 
 // http://redis.io/topics/protocol
 
-function respParse(data, state)
+function respParse(data, offset, state)
 {
-	switch (data[0])
+	switch (data[offset])
 	{
 		case '$':
 			// Bulk string
 			// Figure out the length
-			len = parseInt(data.substring(1, data.indexOf('\r')))
+			len = parseInt(data.substring(1 + offset, data.indexOf('\r', offset)))
+			offset = data.indexOf('\n', offset) + 1
 			// Now grab the string
-			state.completeType = (len == -1) ? null : data.substring(data.indexOf('\n') + 1, data.indexOf('\n') + 1 + len)
+			if (len > -1)
+			{
+				end = data.indexOf('\n', offset)
+				state.completeType = data.substring(offset, end - 1)
+				offset = end + 1
+			}
+			else
+			{
+				state.completeType = null
+			}
 			break;
 
 		case '*':
 			// Array
 			// Figure out the length
-			len = parseInt(data.substring(1, data.indexOf('\r')))
+			len = parseInt(data.substring(1 + offset, data.indexOf('\r', offset)))
 			state.completeType = (len == -1) ? null : []
+			offset = data.indexOf('\n', offset) + 1
+			if (len > 0)
+			{
+				for (counter = 0;counter < len;++counter)
+				{
+					newElement = {}
+					offset = respParse(data, offset, newElement)
+					state.completeType[counter] = newElement.completeType
+				}
+			}
 			break;
 
 		default:
-			state.completeType = data.substring(1, data.length - 2)
+			end = data.indexOf('\n', offset)
+			state.completeType = data.substring(1 + offset, end - 1)
+			offset = end + 1
 			break;
 	}
+	return offset
 }
 
 describe('RESP parser', function() {
 	function parseFromString(data)
 	{
 		returnValue = {}
-		respParse(data, returnValue)
+		offset = respParse(data, 0, returnValue)
 		assert('completeType' in returnValue)
+		assert.equal(offset, data.length)
 		return returnValue.completeType
 	}
 
@@ -75,7 +99,9 @@ describe('RESP parser', function() {
 	})
 
 	describe('array handling', function() {
-		it('should parse arrays')
+		it('should parse arrays', function() {
+			assert.deepEqual(parseFromString("*2\r\n:1234\r\n+a\r\n"), [1234, "a"])
+		})
 
 		it('should parse empty arrays', function() {
 			assert.deepEqual(parseFromString("*0\r\n"), [])
