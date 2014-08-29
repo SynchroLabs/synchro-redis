@@ -108,7 +108,9 @@ describe('RESP parser', function() {
 			assert.equal(parseFromString("*-1\r\n"), null)
 		})
 
-		it('should handle null elements in arrays')
+		it('should handle null elements in arrays', function() {
+			assert.deepEqual(parseFromString("*2\r\n:1234\r\n$-1\r\n"), [1234, null])
+		})
 	})
 })
 
