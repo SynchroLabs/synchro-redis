@@ -11,7 +11,14 @@ function respParse(data, state)
 			// Figure out the length
 			len = parseInt(data.substring(1, data.indexOf('\r')))
 			// Now grab the string
-			state.completeType = data.substring(data.indexOf('\n') + 1, data.indexOf('\n') + 1 + len)
+			state.completeType = (len == -1) ? null : data.substring(data.indexOf('\n') + 1, data.indexOf('\n') + 1 + len)
+			break;
+
+		case '*':
+			// Array
+			// Figure out the length
+			len = parseInt(data.substring(1, data.indexOf('\r')))
+			state.completeType = (len == -1) ? null : []
 			break;
 
 		default:
@@ -61,15 +68,22 @@ describe('RESP parser', function() {
 		it('should parse empty bulk strings', function() {
 			assert.equal(parseFromString("$0\r\n\r\n"), "")
 		})
-		it('should parse null bulk strings')
+
+		it('should parse null bulk strings', function() {
+			assert.equal(parseFromString("$-1\r\n"), null)
+		})
 	})
 
 	describe('array handling', function() {
 		it('should parse arrays')
 
-		it('should parse empty arrays')
+		it('should parse empty arrays', function() {
+			assert.deepEqual(parseFromString("*0\r\n"), [])
+		})
 
-		it('should parse null arrays')
+		it('should parse null arrays', function() {
+			assert.equal(parseFromString("*-1\r\n"), null)
+		})
 
 		it('should handle null elements in arrays')
 	})
