@@ -84,3 +84,10 @@ exports.parse = function(data, offset, state)
 	return offset
 }
 
+exports.encode = function(value)
+{
+	var prefix = (typeof(value) == "number") ? respTypes.Integer : respTypes.SimpleString
+
+	return new Buffer(prefix + value + '\r\n')
+}
+
