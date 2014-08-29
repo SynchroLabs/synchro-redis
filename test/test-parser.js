@@ -2,6 +2,14 @@ var assert = require('assert')
 
 // http://redis.io/topics/protocol
 
+var respTypes = {
+	SimpleString : '+',
+	Error : '-',
+	Integer : ':',
+	BulkString : '$',
+	Array : '*',
+}
+
 function bufferIndexOf(buffer, value, offset)
 {
 	var value = value.charCodeAt(0)
@@ -23,9 +31,11 @@ function respParse(data, offset, state)
 {
 	var dataType = data.toString('utf8', offset, offset + 1)
 
+	state.respType = dataType
+
 	switch (dataType)
 	{
-		case '$':
+		case respTypes.BulkString:
 			// Bulk string
 			// Figure out the length
 			var len = parseInt(data.toString('utf8', 1 + offset, bufferIndexOf(data, '\r', offset)))
@@ -43,7 +53,7 @@ function respParse(data, offset, state)
 			}
 			break;
 
-		case '*':
+		case respTypes.Array:
 			// Array
 			// Figure out the length
 			var len = parseInt(data.toString('utf8', 1 + offset, bufferIndexOf(data, '\r', offset)))
@@ -62,9 +72,9 @@ function respParse(data, offset, state)
 			state.completeType = data.toString('utf8', 1 + offset, end - 1)
 			offset = end + 1
 
-			// Fix the type if it's a number
+			// Fix the type if it's an integer
 
-			if (dataType == ':')
+			if (dataType == respTypes.Integer)
 			{
 				state.completeType = parseInt(state.completeType)
 			}
@@ -124,7 +134,14 @@ describe('RESP parser', function() {
 		assert.equal(parseFromString("+a\r\n"), "a")
 	})
 
-	it('should parse errors')
+	it('should parse errors', function() {
+		var data = new Buffer("-ERR Sadness\r\n")
+		var returnValue = {}
+
+		respParse(data, 0, returnValue)
+		assert.equal(returnValue.completeType, "ERR Sadness")
+		assert.equal(returnValue.respType, respTypes.Error)
+	})
 
 	describe('integer handling', function() {
 		it('should parse integers', function() {
