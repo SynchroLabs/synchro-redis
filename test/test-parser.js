@@ -22,7 +22,9 @@ describe('RESP parser', function() {
 
 	it('should accept data from a Buffer')
 
-	it('should accept data from a string')
+	it('should accept data from a string', function() {
+		assert.equal(parseFromString("+a\r\n"), "a")
+	})
 
 	it('should indicate when a type has been completely received')
 
@@ -34,7 +36,9 @@ describe('RESP parser', function() {
 
 	it('should parse errors')
 
-	it('should parse integers')
+	it('should parse integers', function() {
+		assert.equal(parseFromString(":1234\r\n"), 1234)
+	})
 
 	describe('bulk string handling', function() {
 		it('should parse bulk strings')
