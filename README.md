@@ -52,3 +52,57 @@ due to additional incoming RESP objects that straddled the network framing).
    `resp.parse`. Do this as many times as needed until the offset returned is
    the length of the buffer.
 
+Extending the previous example:
+
+```Javascript
+> transmit_buffer.toString()
+'*3\r\n$3\r\nSET\r\n$11\r\nsessionuuid\r\n$20\r\n{"id":"sessionuuid"}\r\n'
+> var parsing_state = {}
+undefined
+> resp.parse(transmit_buffer, 0, parsing_state)
+58
+> transmit_buffer.length
+58
+> 'completeType' in parsing_state
+true
+> parsing_state.completeType
+[ <Buffer 53 45 54>,
+  <Buffer 73 65 73 73 69 6f 6e 75 75 69 64>,
+  <Buffer 7b 22 69 64 22 3a 22 73 65 73 73 69 6f 6e 75 75 69 64 22 7d> ]
+> parsing_state.completeType[0].toString()
+'SET'
+> parsing_state.completeType[1].toString()
+'sessionuuid'
+> parsing_state.completeType[2].toString()
+'{"id":"sessionuuid"}'
+```
+
+Here is an example using a buffer slice to simulate fragmentation. The first
+slice is 23 bytes long, and the second slice is the remaining data:
+
+```Javascript
+> var parsing_state = {}
+undefined
+> var offset = resp.parse(transmit_buffer.slice(0, 23), 0, parsing_state)
+undefined
+> offset
+23
+> 'completeType' in parsing_state
+false
+> var offset = resp.parse(transmit_buffer.slice(23), 0, parsing_state)
+undefined
+> 'completeType' in parsing_state
+true
+> offset
+35
+> parsing_state.completeType
+[ <Buffer 53 45 54>,
+  <Buffer 73 65 73 73 69 6f 6e 75 75 69 64>,
+  <Buffer 7b 22 69 64 22 3a 22 73 65 73 73 69 6f 6e 75 75 69 64 22 7d> ]
+> parsing_state.completeType[0].toString()
+'SET'
+> parsing_state.completeType[1].toString()
+'sessionuuid'
+> parsing_state.completeType[2].toString()
+'{"id":"sessionuuid"}'
+
