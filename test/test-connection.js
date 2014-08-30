@@ -22,12 +22,19 @@ describe('Redis connection', function() {
 		})
 
 		connection.on('data', function(data) {
-			resp.parse(data, 0, parserState)
+			var offset = 0
 
-			if ('completeType' in parserState)
+			while (offset < data.length)
 			{
-				assert.equal(parserState.completeType, "OK")
-				done()
+				offset = resp.parse(data, offset, parserState)
+
+				if ('completeType' in parserState)
+				{
+					assert.equal(parserState.completeType, "OK")
+
+					parserState = {}
+					done()
+				}
 			}
 		})
 	})
