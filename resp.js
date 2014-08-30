@@ -94,6 +94,9 @@ var parsingState =
 	ParsingBulkStringContents : 5,
 	ParsingBulkStringContentsEatCR : 6,
 	ParsingBulkStringContentsEatLF : 7,
+	ParsingArrayLength : 8,
+	ParsingArrayLengthEatLF : 9,
+	ParsingArrayElement : 10,
 }
 
 exports.parse = function (data, offset, state)
@@ -121,6 +124,12 @@ exports.parse = function (data, offset, state)
 					state.bulkStringLength = 0
 					state.bulkStringLengthSign = null
 					state.parsingState = parsingState.ParsingBulkStringLength;
+				}
+				else if (thisByteAsString == respTypes.Array)
+				{
+					state.arrayLength = 0
+					state.arrayLengthSign = null
+					state.parsingState = parsingState.ParsingArrayLength;
 				}
 				else
 				{
@@ -209,6 +218,61 @@ exports.parse = function (data, offset, state)
 			case parsingState.ParsingBulkStringContentsEatLF:
 				state.completeType = state.bulkStringBuffer;
 				stop = true
+				break;
+
+			case parsingState.ParsingArrayLength:
+				if (thisByteAsString == '\r')
+				{
+					state.parsingState = parsingState.ParsingArrayLengthEatLF
+					state.arrayLength *= state.arrayLengthSign
+				}
+				else
+				{
+					if (!state.arrayLengthSign)
+					{
+						state.arrayLengthSign = (thisByteAsString == '-') ? -1 : +1
+					}
+
+					if (thisByteAsString != '-')
+					{
+						state.arrayLength *= 10
+						state.arrayLength += parseInt(thisByteAsString)
+					}
+				}
+				break;
+
+			case parsingState.ParsingArrayLengthEatLF:
+				if (state.arrayLength == -1)
+				{
+					state.completeType = null
+					stop = true
+				}
+				else if (state.arrayLength == 0)
+				{
+					state.completeType = []
+					stop = true
+				}
+				else
+				{
+					state.parsingState = parsingState.ParsingArrayElement
+					state.arrayBuilder = []
+					state.arrayElementBuilderState = {}
+				}
+				break;
+
+			case parsingState.ParsingArrayElement:
+				exports.parse(data.slice(offset, offset + 1), 0, state.arrayElementBuilderState)
+				if ('completeType' in state.arrayElementBuilderState)
+				{
+					state.arrayBuilder.push(state.arrayElementBuilderState.completeType)
+					state.arrayElementBuilderState = {}
+					--state.arrayLength
+					if (state.arrayLength <= 0)
+					{
+						state.completeType = state.arrayBuilder
+						stop = true
+					}
+				}
 				break;
 		}
 	}
