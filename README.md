@@ -105,4 +105,27 @@ true
 'sessionuuid'
 > parsing_state.completeType[2].toString()
 '{"id":"sessionuuid"}'
+```
+
+Here is some sample code handling data coming from a TCP socket:
+
+```Javascript
+var parserState = {}
+
+connection.on('data', function(data) {
+	var offset = 0
+
+	while (offset < data.length)
+	{
+		offset = resp.parse(data, offset, parserState)
+
+		if ('completeType' in parserState)
+		{
+			// Do something with parserState.completeType
+
+			parserState = {}
+		}
+	}
+})
+```
 
