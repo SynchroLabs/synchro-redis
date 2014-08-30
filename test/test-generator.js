@@ -35,6 +35,8 @@ describe('RESP generator', function() {
 		it('should use simple string for Javascript string', function() {
 			assert.equal(resp.encode('a'), "+a\r\n")
 		})
-		it('should use array for Javascript array')
+		it('should use array for Javascript array', function() {
+			assert.equal(resp.encode([1234,'a']), "*2\r\n:1234\r\n+a\r\n")
+		})
 	})
 })

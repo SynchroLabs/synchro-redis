@@ -88,6 +88,7 @@ var javascriptTypeToRespType =
 {
 	Buffer : respTypes.BulkString,
 	number : respTypes.Integer,
+	Array : respTypes.Array,
 	default : respTypes.SimpleString,
 }
 
@@ -101,6 +102,10 @@ exports.encode = function(value)
 		if (value instanceof Buffer)
 		{
 			valueType = "Buffer"
+		}
+		else if (value instanceof Array)
+		{
+			valueType = "Array"
 		}
 	}
 
@@ -129,6 +134,39 @@ exports.encode = function(value)
 
 			returnValue.write(crlf, offset)
 			offset += crlf.length
+			break;
+
+		case respTypes.Array:
+			var arrayLengthString = value.length.toString()
+			var crlf = '\r\n'
+			var offset = 0
+			var elementBuffers = []
+			var totalElementsLength = 0
+
+			for (var counter = 0;counter < value.length;++counter)
+			{
+				var thisElementBuffer = exports.encode(value[counter])
+
+				totalElementsLength += thisElementBuffer.length
+				elementBuffers.push(thisElementBuffer)
+			}
+
+			returnValue = new Buffer(respTypes.Array.length + arrayLengthString.length + crlf.length + totalElementsLength)
+
+			returnValue.write(respTypes.Array, offset)
+			offset += respTypes.BulkString.length
+
+			returnValue.write(arrayLengthString, offset)
+			offset += arrayLengthString.length
+
+			returnValue.write(crlf, offset)
+			offset += crlf.length
+
+			for (var counter = 0;counter < elementBuffers.length;++counter)
+			{
+				elementBuffers[counter].copy(returnValue, offset)
+				offset += elementBuffers[counter].length
+			}
 			break;
 
 		default:
