@@ -373,3 +373,91 @@ exports.encode = function(value)
 	return returnValue
 }
 
+exports.encode_redis = function(value)
+{
+	var valueType = typeof(value)
+	var returnValue
+
+	if (valueType == "object")
+	{
+		if (value instanceof Buffer)
+		{
+			valueType = "Buffer"
+		}
+		else if (value instanceof Array)
+		{
+			valueType = "Array"
+		}
+		else
+		{
+			value = new Buffer(JSON.stringify(value))
+		}
+	}
+	else
+	{
+		value = new Buffer("" + value)
+	}
+
+	var prefix = (valueType == "Array") ? respTypes.Array : respTypes.BulkString
+
+	switch (prefix)
+	{
+		case respTypes.BulkString:
+			var lengthString = value.length.toString()
+			var crlf = '\r\n'
+			var offset = 0
+
+			returnValue = new Buffer(respTypes.BulkString.length + lengthString.length + crlf.length + value.length + crlf.length)
+
+			returnValue.write(respTypes.BulkString, offset)
+			offset += respTypes.BulkString.length
+
+			returnValue.write(lengthString, offset)
+			offset += lengthString.length
+
+			returnValue.write(crlf, offset)
+			offset += crlf.length
+
+			value.copy(returnValue, offset)
+			offset += value.length
+
+			returnValue.write(crlf, offset)
+			offset += crlf.length
+			break;
+
+		case respTypes.Array:
+			var arrayLengthString = value.length.toString()
+			var crlf = '\r\n'
+			var offset = 0
+			var elementBuffers = []
+			var totalElementsLength = 0
+
+			for (var counter = 0;counter < value.length;++counter)
+			{
+				var thisElementBuffer = exports.encode_redis(value[counter])
+
+				totalElementsLength += thisElementBuffer.length
+				elementBuffers.push(thisElementBuffer)
+			}
+
+			returnValue = new Buffer(respTypes.Array.length + arrayLengthString.length + crlf.length + totalElementsLength)
+
+			returnValue.write(respTypes.Array, offset)
+			offset += respTypes.BulkString.length
+
+			returnValue.write(arrayLengthString, offset)
+			offset += arrayLengthString.length
+
+			returnValue.write(crlf, offset)
+			offset += crlf.length
+
+			for (var counter = 0;counter < elementBuffers.length;++counter)
+			{
+				elementBuffers[counter].copy(returnValue, offset)
+				offset += elementBuffers[counter].length
+			}
+			break;
+	}
+
+	return returnValue
+}
