@@ -20,14 +20,6 @@ describe('RESP parser', function() {
 		assert(resp.parse)
 	})
 
-	it('should accept data from a Buffer')
-
-	it('should accept data from a string', function() {
-		assert.equal(parseFromString("+a\r\n"), "a")
-	})
-
-	it('should indicate when a type has been completely received')
-
 	it('should indicate if there is data remaining to be processed', function() {
 		var data = new Buffer("+a\r\n+b\r\n")
 		var returnValue = {}
@@ -46,6 +38,8 @@ describe('RESP parser', function() {
 		assert.equal(resp.parse(data, 4, returnValue), 8)
 		assert.equal(returnValue.completeType, "b")
 	})
+
+	it('should be able to take partial data and retain parsing state')
 
 	it('should parse simple strings', function() {
 		assert.equal(parseFromString("+a\r\n"), "a")
