@@ -7,7 +7,7 @@ Combining this with connection management and retries and other stuff is the
 ultimate goal.
 
 ##Sending RESP commands
-To generate a redis-compatible command (such as PUT), simply call encode_redis
+To generate a redis-compatible command (such as SET), simply call encode_redis
 with a Javascript array:
 
 ```Javascript
