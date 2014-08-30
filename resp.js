@@ -89,6 +89,11 @@ var parsingState =
 	Initial : 0,
 	EatingUntilCR : 1,
 	EatLF : 2,
+	ParsingBulkStringLength : 3,
+	ParsingBulkStringLengthEatLF : 4,
+	ParsingBulkStringContents : 5,
+	ParsingBulkStringContentsEatCR : 6,
+	ParsingBulkStringContentsEatLF : 7,
 }
 
 exports.parse = function (data, offset, state)
@@ -110,7 +115,17 @@ exports.parse = function (data, offset, state)
 			case parsingState.Initial:
 				state.respType = thisByteAsString
 				state.composingEntity = ""
-				state.parsingState = parsingState.EatingUntilCR
+
+				if (thisByteAsString == respTypes.BulkString)
+				{
+					state.bulkStringLength = 0
+					state.bulkStringLengthSign = null
+					state.parsingState = parsingState.ParsingBulkStringLength;
+				}
+				else
+				{
+					state.parsingState = parsingState.EatingUntilCR
+				}
 				break;
 
 			case parsingState.EatingUntilCR:
@@ -133,6 +148,66 @@ exports.parse = function (data, offset, state)
 				{
 					state.completeType = state.composingEntity
 				}
+				stop = true
+				break;
+
+			case parsingState.ParsingBulkStringLength:
+				if (thisByteAsString == '\r')
+				{
+					state.parsingState = parsingState.ParsingBulkStringLengthEatLF
+					state.bulkStringLength *= state.bulkStringLengthSign
+				}
+				else
+				{
+					if (!state.bulkStringLengthSign)
+					{
+						state.bulkStringLengthSign = (thisByteAsString == '-') ? -1 : +1
+					}
+
+					if (thisByteAsString != '-')
+					{
+						state.bulkStringLength *= 10
+						state.bulkStringLength += parseInt(thisByteAsString)
+					}
+				}
+				break;
+
+			case parsingState.ParsingBulkStringLengthEatLF:
+				if (state.bulkStringLength == -1)
+				{
+					state.completeType = null
+					stop = true
+				}
+				else
+				{
+					if (state.bulkStringLength > 0)
+					{
+						state.parsingState = parsingState.ParsingBulkStringContents
+					}
+					else
+					{
+						state.parsingState = parsingState.ParsingBulkStringContentsEatCR
+					}
+					state.bulkStringBufferOffset = 0
+					state.bulkStringBuffer = new Buffer(state.bulkStringLength)
+				}
+				break;
+
+			case parsingState.ParsingBulkStringContents:
+				state.bulkStringBuffer.writeUInt8(thisByte, state.bulkStringBufferOffset)
+				++state.bulkStringBufferOffset
+				if (state.bulkStringBufferOffset >= state.bulkStringLength)
+				{
+					state.parsingState = parsingState.ParsingBulkStringContentsEatCR
+				}
+				break;
+
+			case parsingState.ParsingBulkStringContentsEatCR:
+				state.parsingState = parsingState.ParsingBulkStringContentsEatLF
+				break;
+
+			case parsingState.ParsingBulkStringContentsEatLF:
+				state.completeType = state.bulkStringBuffer;
 				stop = true
 				break;
 		}
