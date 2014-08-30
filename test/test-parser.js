@@ -53,7 +53,9 @@ describe('RESP parser', function() {
 		assert.equal(returnValue.completeType, "b")
 	})
 
-	it('should be able to take partial data and retain parsing state')
+	it('should be able to take partial data and retain parsing state', function() {
+		// The parseFromBuffer above does this
+	})
 
 	it('should parse simple strings', function() {
 		assert.equal(parseFromString("+a\r\n"), "a")
