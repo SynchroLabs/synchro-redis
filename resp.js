@@ -27,7 +27,7 @@ function bufferIndexOf(buffer, value, offset)
 	return returnValue
 }
 
-exports.parse = function(data, offset, state)
+function parseGuaranteedOneElement(data, offset, state)
 {
 	var dataType = data.toString('utf8', offset, offset + 1)
 
@@ -62,7 +62,7 @@ exports.parse = function(data, offset, state)
 			for (counter = 0;counter < len;++counter)
 			{
 				var newElement = {}
-				offset = exports.parse(data, offset, newElement)
+				offset = parseGuaranteedOneElement(data, offset, newElement)
 				state.completeType[counter] = newElement.completeType
 			}
 			break;
@@ -79,6 +79,63 @@ exports.parse = function(data, offset, state)
 				state.completeType = parseInt(state.completeType)
 			}
 			break;
+	}
+
+	return offset
+}
+
+var parsingState =
+{
+	Initial : 0,
+	EatingUntilCR : 1,
+	EatLF : 2,
+}
+
+exports.parse = function (data, offset, state)
+{
+	if (!state.parsingState)
+	{
+		state.parsingState = parsingState.Initial
+	}
+
+	var stop = false
+
+	for (;((offset < data.length) && (!stop));++offset)
+	{
+		var thisByte = data[offset];
+		var thisByteAsString = String.fromCharCode(thisByte)
+
+		switch (state.parsingState)
+		{
+			case parsingState.Initial:
+				state.respType = thisByteAsString
+				state.composingEntity = ""
+				state.parsingState = parsingState.EatingUntilCR
+				break;
+
+			case parsingState.EatingUntilCR:
+				if (thisByteAsString == '\r')
+				{
+					state.parsingState = parsingState.EatLF
+				}
+				else
+				{
+					state.composingEntity += thisByteAsString
+				}
+				break;
+
+			case parsingState.EatLF:
+				if (state.respType == respTypes.Integer)
+				{
+					state.completeType = parseInt(state.composingEntity)
+				}
+				else
+				{
+					state.completeType = state.composingEntity
+				}
+				stop = true
+				break;
+		}
 	}
 
 	return offset

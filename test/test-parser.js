@@ -5,9 +5,23 @@ describe('RESP parser', function() {
 	function parseFromBuffer(data)
 	{
 		var returnValue = {}
-		var offset = resp.parse(data, 0, returnValue)
-		assert('completeType' in returnValue)
-		assert.equal(offset, data.length)
+
+		for (var counter = 0;counter < data.length;++counter)
+		{
+			var offset = resp.parse(data.slice(counter, counter + 1), 0, returnValue)
+
+			assert.equal(offset, 1)
+
+			if (counter == (data.length - 1))
+			{
+				assert('completeType' in returnValue)
+			}
+			else
+			{
+				assert(!('completeType' in returnValue))
+			}
+		}
+
 		return returnValue.completeType
 	}
 
