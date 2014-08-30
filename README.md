@@ -1,3 +1,4 @@
+##Overview
 Intended to be our own replacement for accessing redis from node.js
 
 Currently implements parsing and encoding of the [RESP protocol](http://redis.io/topics/protocol)
@@ -5,6 +6,7 @@ Currently implements parsing and encoding of the [RESP protocol](http://redis.io
 Combining this with connection management and retries and other stuff is the
 ultimate goal.
 
+##Sending RESP commands
 To generate a redis-compatible command (such as PUT), simply call encode_redis
 with a Javascript array:
 
@@ -25,6 +27,7 @@ data to transmit to redis, which should be compatible with the normal
 [`net.Socket.write`](http://nodejs.org/api/net.html#net_socket_write_data_encoding_callback)
 function.
 
+##Receiving RESP responses
 Parsing incoming data is a little trickier, since the data will come in potentially
 irregular chunks. A chunk of data from the wire may have too little or too much
 data in order to parse to a RESP object.
