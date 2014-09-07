@@ -3,6 +3,7 @@ var resp = require('./resp')
 
 function RedisClient(configuration)
 {
+	// http://stackoverflow.com/questions/11353277/what-is-the-proper-way-to-use-socket-io-callbacks-within-classes-in-node-js
 	var client = this
 
 	this.connection = net.connect(configuration)
