@@ -1,48 +1,9 @@
 var assert = require('assert')
 var resp = require('../resp')
 var net = require('net')
+var RedisServer = require('./RedisServer')
 
 // http://lostechies.com/derickbailey/2012/08/17/asynchronous-unit-tests-with-mocha-promises-and-winjs/
-
-function RedisServer(running)
-{
-	var objects = {}
-
-	this.server = net.createServer(function(connection) {
-		var parserState = {}
-
-		connection.on('data', function(data) {
-			var offset = 0
-
-		    	while (offset < data.length)
-			{
-				offset = resp.parse(data, offset, parserState)
-
-				if ('completeType' in parserState)
-				{
-					var returnData = ""
-
-					switch (parserState.completeType[0].toString())
-					{
-						case "set":
-							objects[parserState.completeType[1]] = parserState.completeType[2]
-							returnData = "OK"
-							break;
-
-						case "get":
-							returnData = objects[parserState.completeType[1]]
-							break;
-					}
-
-			    		parserState = {}
-
-					connection.write(resp.encode_redis(returnData))
-				}
-		    	}			
-		})
-	})
-	this.server.listen(0, running)
-}
 
 describe('Redis connection', function() {
 	var value = new Date().toString()
@@ -50,7 +11,7 @@ describe('Redis connection', function() {
 	var server = null
 
 	before(function(done) {
-		server = new RedisServer(function() {
+		server = new RedisServer.RedisServer(function() {
 			port = server.server.address().port
 			done()
 		})
