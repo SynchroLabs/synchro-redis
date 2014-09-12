@@ -25,16 +25,20 @@ function RedisClient(configuration)
 		}
 	})
 
-	this.set = function(key, value, callback)
+	this.sendCommand = function(params, callback)
 	{
 		this.currentCallback = callback
-		this.connection.write(resp.encode_redis(["set", key, value]))
+		this.connection.write(resp.encode_redis(params))
+	}
+
+	this.set = function(key, value, callback)
+	{
+		this.sendCommand(["set", key, value], callback)
 	}
 
 	this.get = function(key, callback)
 	{
-		this.currentCallback = callback
-		this.connection.write(resp.encode_redis(["get", key]))
+		this.sendCommand(["get", key], callback)
 	}
 }
 
