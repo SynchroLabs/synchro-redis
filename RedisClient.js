@@ -8,6 +8,9 @@ function RedisClient(configuration)
 
 	this.connection = net.connect(configuration)
 	this.parserState = {}
+	this.responseTimeout = 10
+	this.callbacks = []
+	this.timeouts = []
 
 	this.connection.on('data', function(data) {
 		var offset = 0
@@ -18,7 +21,10 @@ function RedisClient(configuration)
 
 			if ('completeType' in client.parserState)
 			{
-				client.currentCallback(client.parserState.completeType)
+				var callback = client.callbacks.shift()
+				clearTimeout(client.timeouts.shift())
+
+				callback({ response: client.parserState.completeType })
 
 				client.parserState = {}
 			}
@@ -27,7 +33,8 @@ function RedisClient(configuration)
 
 	this.sendCommand = function(params, callback)
 	{
-		this.currentCallback = callback
+		this.callbacks.push(callback)
+		this.timeouts.push(setTimeout(callback, this.responseTimeout, { errorString: "Timed out while waiting for response" }))
 		this.connection.write(resp.encode_redis(params))
 	}
 

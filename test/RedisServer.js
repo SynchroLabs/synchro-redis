@@ -3,6 +3,8 @@ var resp = require('../resp')
 
 function RedisServer(running)
 {
+	var redisServer = this;
+
 	this.server = net.createServer(function(connection) {
 		var parserState = {}
 		var objects = {}
@@ -32,7 +34,14 @@ function RedisServer(running)
 
 			    		parserState = {}
 
-					connection.write(resp.encode_redis(returnData))
+					if (!redisServer.explodeOnCommand)
+					{
+						connection.write(resp.encode_redis(returnData))
+					}
+					else
+					{
+						connection.end()
+					}
 				}
 		    	}			
 		})
