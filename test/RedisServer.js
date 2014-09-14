@@ -3,10 +3,9 @@ var resp = require('../resp')
 
 function RedisServer(running)
 {
-	var objects = {}
-
 	this.server = net.createServer(function(connection) {
 		var parserState = {}
+		var objects = {}
 
 		connection.on('data', function(data) {
 			var offset = 0
