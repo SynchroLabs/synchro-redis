@@ -39,4 +39,15 @@ describe('Redis client', function() {
 			done()
 		})
 	})
+	it('should recover after a request fails', function(done) {
+		client.get("unittest", function(response) {
+			assert.equal(response.errorString, "Timed out while waiting for response")
+			server.explodeOnCommand = false
+
+			client.set("unittest", value, function(response) {
+				assert.equal(response.response, "OK")
+				done()
+			})
+		})
+	})
 })
