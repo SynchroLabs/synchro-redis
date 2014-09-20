@@ -1,6 +1,34 @@
 ##Overview
 Intended to be our own replacement for accessing redis from node.js
 
+##RedisClient module
+
+The following example creates a RedisClient that can be used to talk to redis.
+
+```Javascript
+var RedisClient = require('./RedisClient')
+
+var client = new RedisClient.RedisClient({ port: 6379 })
+
+var key = "unittest"
+var value = new Date().toString()
+
+console.log("setting " + key + " to " + value)
+
+client.set(key, value, function(response) {
+	console.log("set response = " + JSON.stringify(response))
+
+	client.get("unittest", function(getresponse) {
+		console.log("get response = " + JSON.stringify(getresponse))
+		console.log("getresponse.response.toString() = " + getresponse.response.toString())
+
+		client.close()
+	})
+})
+```
+
+##RESP module
+
 Currently implements parsing and encoding of the [RESP protocol](http://redis.io/topics/protocol)
 
 Combining this with connection management and retries and other stuff is the
