@@ -11,24 +11,26 @@ describe('Redis client', function() {
 	var server = null
 	var client = null
 
-	before(function(done) {
+	beforeEach(function(done) {
 		server = new RedisServer.RedisServer(function() {
 			client = new RedisClient.RedisClient({ port: server.server.address().port })
 			done()
 		})
 	})
 
+	afterEach(function() {
+		server.close()
+		server = null
+	})
+
 	it('should authenticate')
-	it('should set objects', function(done) {
+	it('should set and get objects', function(done) {
 		client.set("unittest", value, function(response) {
 			assert.equal(response.response, "OK")
-			done()
-		})
-	})
-	it('should get objects', function(done) {
-		client.get("unittest", function(response) {
-			assert.equal(response.response, value)
-			done()
+			client.get("unittest", function(response) {
+				assert.equal(response.response.toString(), value)
+				done()
+			})
 		})
 	})
 	it('should notify callers if a response is not received within a timeout period', function(done) {
@@ -40,13 +42,19 @@ describe('Redis client', function() {
 		})
 	})
 	it('should recover after a request fails', function(done) {
-		client.get("unittest", function(response) {
-			assert.equal(response.errorString, "Timed out while waiting for response")
-			server.explodeOnCommand = false
+		client.set("unittest", value, function(response) {
+			assert.equal(response.response, "OK")
 
-			client.set("unittest", value, function(response) {
-				assert.equal(response.response, "OK")
-				done()
+			server.explodeOnCommand = true
+
+			client.get("unittest", function(response) {
+				assert.equal(response.errorString, "Timed out while waiting for response")
+				server.explodeOnCommand = false
+
+				client.get("unittest", function(response) {
+					assert.equal(response.response.toString(), value)
+					done()
+				})
 			})
 		})
 	})

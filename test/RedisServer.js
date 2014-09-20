@@ -4,10 +4,10 @@ var resp = require('../resp')
 function RedisServer(running)
 {
 	var redisServer = this;
+	var objects = {}
 
 	this.server = net.createServer(function(connection) {
 		var parserState = {}
-		var objects = {}
 
 		connection.on('data', function(data) {
 			var offset = 0
@@ -47,6 +47,11 @@ function RedisServer(running)
 		})
 	})
 	this.server.listen(0, running)
+	this.close = function()
+	{
+		this.server.close()
+		this.server = null
+	}
 }
 
 exports.RedisServer = RedisServer
