@@ -87,6 +87,21 @@ function RedisClient(configuration)
 		this.maybeCreateNewConnection()
 	}
 
+	this.close = function()
+	{
+		if (this.pendingConnection)
+		{
+			this.pendingConnection.end()
+			this.pendingConnection = null
+		}
+
+		if (this.connection)
+		{
+			this.connection.end()
+			this.connection = null
+		}
+	}
+
 	this.set = function(key, value, callback)
 	{
 		this.sendCommand(["set", key, value], callback)
